@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
-const timeSeriesSchema = new mongoose.Schema({
+const {Schema,model} = mongoose
+
+
+const timeSeriesSchema = new Schema({
 
   timestamp: {type: Number, default: Math.floor(new Date() / 60000) },
   data: [
@@ -14,6 +17,6 @@ const timeSeriesSchema = new mongoose.Schema({
   ],
 });
 
-const TimeSeriesModel = mongoose.model('TimeSeries', timeSeriesSchema);
+const TimeSeriesModel = model('TimeSeries', timeSeriesSchema);
 
 module.exports = TimeSeriesModel;
