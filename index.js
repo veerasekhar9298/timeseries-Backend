@@ -7,14 +7,14 @@ const http = require('http')
 const CryptoJS = require('crypto-js')
 // const Emitter = require('./app/emitter-Service/Emit-service')
 const io = require('socket.io-client')
-
+const TimeSeries  = require('./model/series-Modal')
 const app = express()
 app.use(cors())
 configureDB()
 
 const socket = io('http://localhost:3565')
 
-socket.on('data',(data)=>{
+socket.on('data',async (data)=>{
     
 
     const decryptedMsg = JSON.parse(CryptoJS.AES.decrypt(data, process.env.AES_KEY).toString(CryptoJS.enc.Utf8))
@@ -25,6 +25,27 @@ socket.on('data',(data)=>{
 
     if (validation_key === secret_key) {
         console.log("valid data",rest)
+        let currentTime = Math.floor(new Date() / 60000);
+    const FoundDoc = await TimeSeries.findOne({timestamp: currentTime });
+        console.log(FoundDoc ,"foundDoc")
+    if (!FoundDoc) {
+      const output = new TimeSeries({
+        data: rest,
+        timestamp:currentTime
+      });
+      const final = await output.save();
+      console.log(final,"new record");
+    } else {
+
+      const findDoc = await TimeSeries.findOneAndUpdate(
+        { timestamp: currentTime },
+        { $push: { data: rest } },
+        { new: true }
+      );
+      console.log(findDoc,"updated Record");
+      
+    }
+
     
     } else {
       console.error('Data integrity compromised. Secret keys do not match.');
@@ -34,5 +55,5 @@ socket.on('data',(data)=>{
 
 
 app.listen(PORT,()=>{
-    console.log(`server is running on the port ${PORT}`)
+    console.log(`Listener server is running on the port ${PORT}`)
 })
