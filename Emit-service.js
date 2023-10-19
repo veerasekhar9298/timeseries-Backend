@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 const { Server, Socket } = require('socket.io');
 const { createServer } = require('http');
 const express = require('express');
@@ -40,7 +40,7 @@ io.on('connection', (socket) => {
             secret_key,
         };
         // console.log(sumCheckMessage);
-        const encryptedMessage = CryptoJS.AES.encrypt(JSON.stringify(sumCheckMessage),"00eba3b45736de0f4963ef3018322923514bd8b1112883424fb14bd926369ad8").toString()
+        const encryptedMessage = CryptoJS.AES.encrypt(JSON.stringify(sumCheckMessage),process.env.AES_KEY).toString()
         socket.emit('data',encryptedMessage)
 
     }, 10000);
