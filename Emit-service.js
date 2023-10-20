@@ -7,6 +7,10 @@ const app = express();
 const PORT = 3565;
 const data = require('./data.json');
 
+// Generate a random 256-bit key (32 bytes)
+// const keyBytes = CryptoJS.lib.WordArray.random(32);
+// const iv = CryptoJS.lib.WordArray.random(16);
+
 // here  key and IV are stored in the hexadecimalWay so parse it 
 const key = CryptoJS.enc.Hex.parse(process.env.AES_KEY);
 const iv = CryptoJS.enc.Hex.parse(process.env.IV); 
@@ -25,21 +29,29 @@ const io = new Server(httpServer, {
 
 // function to make the encryption of the  Message 
 function encryptMessage(message,key,iv) {
-    const jsonString = JSON.stringify(message);
-    const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
-    const sumCheckMessage = {
-        ...message,
-        secret_key,
-    };
-    const jsonString2 = JSON.stringify(sumCheckMessage);
-  
-  
-  const  encrypted = CryptoJS.AES.encrypt(jsonString2, key, {
-    iv: iv,
-    mode: CryptoJS.mode.CTR, // Use CTR mode
-  });
- 
-  return encrypted.toString()
+    try{
+        const jsonString = JSON.stringify(message);
+        const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
+        const sumCheckMessage = {
+            ...message,
+            secret_key,
+        };
+        const jsonString2 = JSON.stringify(sumCheckMessage);
+      
+      
+      const  encrypted = CryptoJS.AES.encrypt(jsonString2, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CTR, // Use CTR mode
+      });
+     
+      return encrypted.toString()
+
+    }catch (e){
+        console.error('Error encrypting message:', e);
+        return null;
+
+    }
+    
     
   }
 

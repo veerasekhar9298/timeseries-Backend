@@ -15,6 +15,15 @@ configureDB();
 const key = CryptoJS.enc.Hex.parse(process.env.AES_KEY);
 const iv = CryptoJS.enc.Hex.parse(process.env.IV); 
 
+
+
+let totalReceived = 0;
+let successfullyDecoded = 0;
+
+
+
+
+
 function decryptMessage(encryptedMessage,key,iv) {
     
     const decrypted =  CryptoJS.AES.decrypt(encryptedMessage, key, {
@@ -28,10 +37,6 @@ function decryptMessage(encryptedMessage,key,iv) {
 
 
 
-
-
-
-
 const httpServer = createServer(app);
 
 const io2 = new Server(httpServer, {
@@ -42,8 +47,7 @@ const io2 = new Server(httpServer, {
 
 io2.on("connection",(socket)=>{
     console.log(`connected to the ${socket.id}`)
-
-    // socket.emit('data',"working socket")
+    socket.emit('successRate', calculateSuccessRate())
 })
 
 const socket = io('http://localhost:3565');
@@ -51,8 +55,8 @@ const socket = io('http://localhost:3565');
 
 
 socket.on('data', async (data) => {
-    // console.log(data,'encrypted Message Reciving')
-    
+   
+    totalReceived++;
     try {
         const message = decryptMessage(data,key,iv)
             
@@ -61,6 +65,7 @@ socket.on('data', async (data) => {
         const validation_key = CryptoJS.SHA256(JSON.stringify(rest)).toString(CryptoJS.enc.Hex);
 
         if (validation_key === secret_key) {
+            successfullyDecoded++;
             const currentTime = Math.floor(new Date() / 60000);
             const FoundDoc = await TimeSeries.findOne({ timestamp: currentTime });
 
@@ -88,10 +93,18 @@ socket.on('data', async (data) => {
         } else {
             console.error('Data integrity compromised. Secret keys do not match.');
         }
+        io2.emit('successRate', calculateSuccessRate())
+        socket.on('disconnect', () => {
+            console.log(`Disconnected from socket: ${socket.id}`);
+          })
     } catch (error) {
         console.error('Error processing data:', error);
     }
 });
+
+function calculateSuccessRate() {
+    return ((successfullyDecoded / totalReceived) * 100).toFixed(2)
+}
 
 httpServer.listen(PORT, () => {
     console.log(`Listener server is running on the port ${PORT}`);
