@@ -19,9 +19,9 @@ To run this application, follow these steps:
 
 1. Clone the repository to your local machine:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/veerasekhar9298/timeseries-Backend.git
    cd node-application 
-   npm install - To install all dependencies
+   npm install 
 
 
 2. start the Emitter Service following Command 
