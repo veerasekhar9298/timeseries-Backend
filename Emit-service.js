@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Server, Socket } = require('socket.io');
+const { Server} = require('socket.io');
 const { createServer } = require('http');
 const express = require('express');
 const CryptoJS = require('crypto-js');
@@ -15,16 +15,37 @@ const io = new Server(httpServer, {
     },
 });
 
+function encryptMessage(message) {
+    const jsonString = JSON.stringify(message);
+    const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
+    const sumCheckMessage = {
+      ...message,
+      secret_key,
+    };
+    return CryptoJS.AES.encrypt(
+      JSON.stringify(sumCheckMessage),
+      process.env.AES_KEY
+    ).toString();
+  }
+
+
+
+
+
 io.on('connection', (socket) => {
-    // This will only run when a client connects
+
     console.log(`connected to the ${socket.id}`);
 
-    const sendEncryptedData = setInterval(() => {
-        const getRandomData = (array) => {
-            const randomIndex = Math.floor(Math.random() * array.length);
-            return array[randomIndex];
-        };
+    
+    const getRandomData = (array) => {
+        const randomIndex = Math.floor(Math.random() * array.length);
+        return array[randomIndex];
+    };
 
+
+
+    const sendEncryptedData = setInterval(() => {
+        
         const originalMessage = {
             name: getRandomData(data.names),
             origin: getRandomData(data.cities),
@@ -39,11 +60,18 @@ io.on('connection', (socket) => {
             ...originalMessage,
             secret_key,
         };
-        // console.log(sumCheckMessage);
-        const encryptedMessage = CryptoJS.AES.encrypt(JSON.stringify(sumCheckMessage),process.env.AES_KEY).toString()
+        const encryptedMessage = encryptMessage(originalMessage)
+        
         socket.emit('data',encryptedMessage)
+        
 
     }, 10000);
+
+    socket.on('disconnect', () => {
+        console.log(`Disconnected from socket: ${socket.id}`);
+        clearInterval(sendEncryptedData);
+      })
+      
 });
 
 httpServer.listen(PORT, () => {
