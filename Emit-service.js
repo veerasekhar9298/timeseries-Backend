@@ -7,36 +7,51 @@ const app = express();
 const PORT = 3565;
 const data = require('./data.json');
 
+// here  key and IV are stored in the hexadecimalWay so parse it 
+const key = CryptoJS.enc.Hex.parse(process.env.AES_KEY);
+const iv = CryptoJS.enc.Hex.parse(process.env.IV); 
+
+// create the app and assigned server 
 const httpServer = createServer(app);
 
+// we destructured Server fron the socket.io to upgrade normal server to a websocket server
+// cors origin polices add to socket so the reciver should bre running on this host 5443 
 const io = new Server(httpServer, {
     cors: {
         origin: ['http://localhost:5443'],
     },
 });
 
-function encryptMessage(message) {
+
+// function to make the encryption of the  Message 
+function encryptMessage(message,key,iv) {
     const jsonString = JSON.stringify(message);
     const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
     const sumCheckMessage = {
-      ...message,
-      secret_key,
+        ...message,
+        secret_key,
     };
-    return CryptoJS.AES.encrypt(
-      JSON.stringify(sumCheckMessage),
-      process.env.AES_KEY
-    ).toString();
+    const jsonString2 = JSON.stringify(sumCheckMessage);
+  
+  
+  const  encrypted = CryptoJS.AES.encrypt(jsonString2, key, {
+    iv: iv,
+    mode: CryptoJS.mode.CTR, // Use CTR mode
+  });
+ 
+  return encrypted.toString()
+    
   }
 
 
 
 
-
+ // socket made anconnection 
 io.on('connection', (socket) => {
 
     console.log(`connected to the ${socket.id}`);
 
-    
+
     const getRandomData = (array) => {
         const randomIndex = Math.floor(Math.random() * array.length);
         return array[randomIndex];
@@ -52,15 +67,7 @@ io.on('connection', (socket) => {
             destination: getRandomData(data.cities)
         };
 
-        const jsonString = JSON.stringify(originalMessage);
-
-        const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
-
-        const sumCheckMessage = {
-            ...originalMessage,
-            secret_key,
-        };
-        const encryptedMessage = encryptMessage(originalMessage)
+        const encryptedMessage = encryptMessage(originalMessage,key,iv)
         
         socket.emit('data',encryptedMessage)
         

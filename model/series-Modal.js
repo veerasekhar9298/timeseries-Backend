@@ -13,7 +13,7 @@ const timeSeriesSchema = new Schema({
       destination: String,
     },
   ],
-});
+},{timestamps:true});
 
 const TimeSeries = model('TimeSeries', timeSeriesSchema);
 

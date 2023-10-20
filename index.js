@@ -12,6 +12,26 @@ const app = express();
 app.use(cors());
 configureDB();
 
+const key = CryptoJS.enc.Hex.parse(process.env.AES_KEY);
+const iv = CryptoJS.enc.Hex.parse(process.env.IV); 
+
+function decryptMessage(encryptedMessage,key,iv) {
+    
+    const decrypted =  CryptoJS.AES.decrypt(encryptedMessage, key, {
+        iv: iv,
+        mode: CryptoJS.mode.CTR, // Use CTR mode
+      })
+
+      return JSON.parse(decrypted.toString(CryptoJS.enc.Utf8))
+  }
+  
+
+
+
+
+
+
+
 const httpServer = createServer(app);
 
 const io2 = new Server(httpServer, {
@@ -31,9 +51,13 @@ const socket = io('http://localhost:3565');
 
 
 socket.on('data', async (data) => {
+    // console.log(data,'encrypted Message Reciving')
+    
     try {
-        const decryptedMsg = JSON.parse(CryptoJS.AES.decrypt(data, process.env.AES_KEY).toString(CryptoJS.enc.Utf8));
-        const { secret_key, ...rest } = decryptedMsg;
+        const message = decryptMessage(data,key,iv)
+            
+        const { secret_key, ...rest } = message;
+        
         const validation_key = CryptoJS.SHA256(JSON.stringify(rest)).toString(CryptoJS.enc.Hex);
 
         if (validation_key === secret_key) {
