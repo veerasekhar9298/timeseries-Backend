@@ -26,9 +26,11 @@ To run this application, follow these steps:
    //open another terminal of timeseries-Backend
    node index.js
 
-2. if the connection is established data from emitter will send recived by the Listener 
+2. Paste the .env file to get the AES Key and the required environment variables
 
-3. For Tracking the data run the frontend application data will be shown real time with success Rate  
+3. if the connection is established data from emitter will send recived by the Listener 
+
+4. For Tracking the data run the frontend application data will be shown real time with success Rate  
 
         
 

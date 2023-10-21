@@ -12,12 +12,12 @@ const TimeSeries = require("./model/series-Modal");
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 const app = express();
+const acessLogStream = fs.createWriteStream(path.join(__dirname,'access.log'),{flags:'a'})
+app.use(morgan('dev',{stream:acessLogStream}))
 app.use(cors());
 configureDB();
 
-const acessLogStream = fs.createWriteStream(path.join(__dirname,'access.log'),{flags:'a'})
 
-app.use(morgan('dev',{stream:acessLogStream}))
 
 const key = CryptoJS.enc.Hex.parse(process.env.AES_KEY);
 const iv = CryptoJS.enc.Hex.parse(process.env.IV);
