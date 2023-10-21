@@ -1,98 +1,81 @@
-require('dotenv').config();
-const { Server} = require('socket.io');
-const { createServer } = require('http');
-const express = require('express');
-const CryptoJS = require('crypto-js');
+require("dotenv").config();
+const { Server } = require("socket.io");
+const { createServer } = require("http");
+const express = require("express");
+const CryptoJS = require("crypto-js");
 const app = express();
 const PORT = 3565;
-const data = require('./data.json');
+const data = require("./data.json");
 
 // Generate a random 256-bit key (32 bytes)
 // const keyBytes = CryptoJS.lib.WordArray.random(32);
 // const iv = CryptoJS.lib.WordArray.random(16);
 
-// here  key and IV are stored in the hexadecimalWay so parse it 
+// here  key and IV are stored in the hexadecimalWay so parse it
 const key = CryptoJS.enc.Hex.parse(process.env.AES_KEY);
-const iv = CryptoJS.enc.Hex.parse(process.env.IV); 
+const iv = CryptoJS.enc.Hex.parse(process.env.IV);
 
-// create the app and assigned server 
+// create the app and assigned server
 const httpServer = createServer(app);
 
 // we destructured Server fron the socket.io to upgrade normal server to a websocket server
-// cors origin polices add to socket so the reciver should bre running on this host 5443 
+// cors origin polices add to socket so the reciver should bre running on this host 5443
 const io = new Server(httpServer, {
-    cors: {
-        origin: ['http://localhost:5443'],
-    },
+  cors: {
+    origin: ["http://localhost:5443"], 
+  },
 });
 
+// function to make the encryption of the  Message
+function encryptMessage(message, key, iv) {
+  try {
+    const jsonString = JSON.stringify(message);
+    const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
+    const sumCheckMessage = {
+      ...message,
+      secret_key,
+    };
+    const jsonString2 = JSON.stringify(sumCheckMessage);
 
-// function to make the encryption of the  Message 
-function encryptMessage(message,key,iv) {
-    try{
-        const jsonString = JSON.stringify(message);
-        const secret_key = CryptoJS.SHA256(jsonString).toString(CryptoJS.enc.Hex);
-        const sumCheckMessage = {
-            ...message,
-            secret_key,
-        };
-        const jsonString2 = JSON.stringify(sumCheckMessage);
-      
-      
-      const  encrypted = CryptoJS.AES.encrypt(jsonString2, key, {
-        iv: iv,
-        mode: CryptoJS.mode.CTR, // Use CTR mode
-      });
-     
-      return encrypted.toString()
+    const encrypted = CryptoJS.AES.encrypt(jsonString2, key, {
+      iv: iv,
+      mode: CryptoJS.mode.CTR, // Use CTR mode
+    });
 
-    }catch (e){
-        console.error('Error encrypting message:', e);
-        return null;
-
-    }
-    
-    
+    return encrypted.toString();
+  } catch (e) {
+    console.error("Error encrypting message:", e);
+    return null;
   }
+}
 
+// socket made anconnection
+io.on("connection", (socket) => {
+  console.log(`connected to the ${socket.id}`);
 
+  const getRandomData = (array) => {
+    const randomIndex = Math.floor(Math.random() * array.length);
+    return array[randomIndex];
+  };
 
-
- // socket made anconnection 
-io.on('connection', (socket) => {
-
-    console.log(`connected to the ${socket.id}`);
-
-
-    const getRandomData = (array) => {
-        const randomIndex = Math.floor(Math.random() * array.length);
-        return array[randomIndex];
+  const sendEncryptedData = setInterval(() => {
+    const originalMessage = {
+      name: getRandomData(data.names),
+      origin: getRandomData(data.cities),
+      destination: getRandomData(data.cities),
     };
 
+    const encryptedMessage = encryptMessage(originalMessage, key, iv);
 
+    socket.emit("data", encryptedMessage);
+  }, 10000);
 
-    const sendEncryptedData = setInterval(() => {
-        
-        const originalMessage = {
-            name: getRandomData(data.names),
-            origin: getRandomData(data.cities),
-            destination: getRandomData(data.cities)
-        };
-
-        const encryptedMessage = encryptMessage(originalMessage,key,iv)
-        
-        socket.emit('data',encryptedMessage)
-        
-
-    }, 10000);
-
-    socket.on('disconnect', () => {
-        console.log(`Disconnected from socket: ${socket.id}`);
-        clearInterval(sendEncryptedData);
-      })
-      
+  socket.on("disconnect", () => {
+    console.log(`Disconnected from socket: ${socket.id}`);
+    clearInterval(sendEncryptedData);
+  });
 });
 
 httpServer.listen(PORT, () => {
-    console.log(`emitter service running on ${PORT}`);
+  console.log(`emitter service running on ${PORT}`);
 });

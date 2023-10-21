@@ -20,21 +20,15 @@ To run this application, follow these steps:
 1. Clone the repository to your local machine:
    ```bash
    git clone https://github.com/veerasekhar9298/timeseries-Backend.git
-   cd node-application 
+   cd timeseries-Backend 
    npm install 
+   node Emit-service.js
+   //open another terminal of timeseries-Backend
+   node index.js
 
+2. if the connection is established data from emitter will send recived by the Listener 
 
-2. start the Emitter Service following Command 
-        node Emit-service.js 
-        this will make the emitter server running 
-
-3. start the Listener Service following Command 
-        node index.js 
-        this  will make the conection with the emitter 
-
-4. if the connection is established data from emitter will send recived by the Listener 
-
-5. For Tracking the data run the frontend application data will be shown real time with success Rate  
+3. For Tracking the data run the frontend application data will be shown real time with success Rate  
 
         
 
